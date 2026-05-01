@@ -1,0 +1,99 @@
+// Prisma schema for Team Task Manager
+// Supports multi-tenant workspace isolation via Company model
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id           String    @id @default(cuid())
+  name         String
+  company_code String    @unique
+  admin_id     String
+  users        User[]
+  projects     Project[]
+  created_at   DateTime  @default(now())
+}
+
+model User {
+  id                  String          @id @default(cuid())
+  name                String
+  email               String          @unique
+  password_hash       String
+  role                Role            @default(EMPLOYEE)
+  company_id          String
+  company             Company         @relation(fields: [company_id], references: [id])
+  owned_projects      Project[]       @relation("ProjectOwner")
+  project_memberships ProjectMember[]
+  assigned_tasks      Task[]          @relation("TaskAssignee")
+  created_tasks       Task[]          @relation("TaskCreator")
+  comments            Comment[]
+  created_at          DateTime        @default(now())
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  owner_id    String
+  owner       User            @relation("ProjectOwner", fields: [owner_id], references: [id])
+  company_id  String
+  company     Company         @relation(fields: [company_id], references: [id])
+  members     ProjectMember[]
+  tasks       Task[]
+  created_at  DateTime        @default(now())
+}
+
+model ProjectMember {
+  id         String   @id @default(cuid())
+  project_id String
+  project    Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  joined_at  DateTime @default(now())
+
+  @@unique([project_id, user_id])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  project_id  String
+  project     Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  assignee_id String?
+  assignee    User?      @relation("TaskAssignee", fields: [assignee_id], references: [id], onDelete: SetNull)
+  created_by  String
+  creator     User       @relation("TaskCreator", fields: [created_by], references: [id])
+  due_date    DateTime?
+  comments    Comment[]
+  created_at  DateTime   @default(now())
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  body       String
+  task_id    String
+  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  author_id  String
+  author     User     @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+}

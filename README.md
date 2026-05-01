@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Team Task Manager
 
-## Getting Started
+A private, invite-only team task management application with role-based access control. Built with **Next.js 16**, **Prisma 7**, **PostgreSQL**, and **shadcn/ui v4**.
 
-First, run the development server:
+## Features
+
+- **Multi-Tenant Workspaces** — each company gets an isolated workspace with a unique invite code
+- **Role-Based Access Control** — Admin, Manager, and Employee roles with granular permissions
+- **Project Management** — create projects, assign members, track progress
+- **Task Tracking** — create, assign, and manage tasks with status workflows (TODO → IN_PROGRESS → DONE)
+- **Overdue Detection** — automatic overdue flagging on tasks past their due date
+- **Comments** — threaded comments on tasks with real-time updates
+- **Responsive Design** — mobile-first layout with collapsible sidebar
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Database | PostgreSQL via Prisma 7 ORM |
+| Auth | JWT (HTTP-only cookies) + RBAC middleware |
+| UI | shadcn/ui v4 + Tailwind CSS v4 |
+| Deployment | Railway |
+
+## Quick Start
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Random 64-byte secret for signing auth tokens |
+
+Generate a JWT secret:
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('base64url'))"
+```
+
+### 3. Push database schema
+
+```bash
+npx prisma db push
+```
+
+### 4. Start development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) — you'll be redirected to the registration page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Roles & Permissions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Permission | Admin | Manager | Employee |
+|-----------|:-----:|:-------:|:--------:|
+| View all projects | ✅ | Own only | Assigned only |
+| Create projects | ✅ | ✅ | ❌ |
+| Delete projects | ✅ | Own only | ❌ |
+| Create/assign tasks | ✅ | ✅ | ❌ |
+| Change task status | ✅ | ✅ | Own tasks |
+| Manage members | ✅ | ❌ | ❌ |
+| Change user roles | ✅ | ❌ | ❌ |
 
-## Learn More
+## Deploy to Railway
 
-To learn more about Next.js, take a look at the following resources:
+1. Push your code to a GitHub repo
+2. Go to [railway.com](https://railway.com) → New Project → Deploy from GitHub
+3. Add a PostgreSQL service → link it to your app
+4. Set environment variables in the Railway dashboard:
+   - `DATABASE_URL` — auto-injected when you link the PostgreSQL service
+   - `JWT_SECRET` — your generated secret
+5. Railway will use `railway.toml` to build and deploy automatically
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/
+│   ├── (auth)/          # Login & Register pages
+│   ├── (dashboard)/     # Dashboard, Projects, Tasks, Members
+│   └── api/             # RESTful API routes
+├── components/
+│   ├── ui/              # shadcn/ui primitives
+│   ├── dashboard/       # Role-scoped dashboard views
+│   ├── projects/        # Project list & detail
+│   ├── tasks/           # Task detail & comments
+│   └── members/         # Member management table
+├── lib/                 # Auth, Prisma, validators, utilities
+└── proxy.ts             # Auth middleware (JWT verification)
+```
 
-## Deploy on Vercel
+## Testing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [TESTING_GUIDE.md](./TESTING_GUIDE.md) for a comprehensive step-by-step testing checklist.
